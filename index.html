@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f7fb">
+  <title>فتح وإغلاق الأصناف</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;color:#172033;background:#f3f6fa;font-synthesis:none}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px}
+    .app{width:min(100%,540px)}.panel{background:#fff;border:1px solid #e4eaf1;border-radius:22px;padding:30px;box-shadow:0 14px 40px #20334d12}
+    h1{font-size:26px;margin:0 0 8px;text-align:center}.intro{text-align:center;color:#657187;margin:0 0 26px}
+    .choices{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:26px 0 8px}
+    button{font:inherit;cursor:pointer}.choice{padding:24px 10px;border:2px solid #e3e8ef;border-radius:15px;background:#fff;font-size:20px;font-weight:800;color:#445066;transition:.15s}
+    .choice:hover{transform:translateY(-2px);box-shadow:0 8px 20px #20334d12}.choice[data-mode="close"]{border-color:#f0b9bf;color:#c52232;background:#fff8f8}
+    .choice[data-mode="open"]{border-color:#b5dec7;color:#137243;background:#f5fcf7}
+    .screen{display:none}.screen.active{display:block}.back{border:0;background:transparent;color:#52627a;padding:0 0 16px;font-weight:650}
+    label{display:block;font-weight:700;margin-bottom:8px}.input-row{display:flex;gap:10px}
+    input{min-width:0;flex:1;border:1px solid #cfd7e2;border-radius:12px;padding:13px 14px;font:inherit;font-size:18px;outline:none}
+    input:focus{border-color:#5578c7;box-shadow:0 0 0 3px #5578c722}
+    .make{border:0;border-radius:12px;padding:0 19px;color:#fff;background:#273c61;font-weight:700}.make:hover{background:#1c2e4d}
+    .hint{font-size:13px;color:#738096;margin:9px 0 0}.error{color:#c52232;font-size:14px;min-height:22px;margin:10px 0 0}
+    .result{margin-top:20px;border:1px solid #e5eaf0;border-radius:15px;padding:20px;background:#fff;text-align:center;display:none}
+    .result.visible{display:block}.result-title{font-weight:800;font-size:23px;margin:0 0 15px}.result.close .result-title{color:#d32638}.result.open .result-title{color:#16834d}
+    .barcode-wrap{overflow-x:auto;padding:4px 0}.barcode{display:block;width:auto;max-width:none;min-width:280px;height:120px;margin:0 auto}.digits{font:600 17px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:2px;margin:5px 0 0;color:#202a38;direction:ltr}
+    footer{text-align:center;color:#8a95a5;font-size:13px;margin:18px 0 0}.print{margin-top:14px;border:1px solid #d8e0e9;background:#f8fafc;border-radius:10px;padding:9px 16px;color:#35445b;font-weight:650}
+    @media(max-width:440px){body{padding:14px}.panel{padding:22px 17px}.input-row{flex-direction:column}.make{padding:12px}}
+    @media print{body{display:block;background:#fff;padding:0}.panel{box-shadow:none;border:0;padding:0}.panel>*:not(.result){display:none!important}.result{display:block!important;border:0;margin:0;padding:12px}.print,footer{display:none}.barcode{height:120px}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel" aria-labelledby="heading">
+      <section id="homeScreen" class="screen active">
+        <h1 id="heading">إدارة الأصناف</h1>
+        <p class="intro">اختر العملية المطلوبة</p>
+        <div class="choices" role="group" aria-label="نوع العملية">
+          <button class="choice" type="button" data-mode="close">إغلاق الصنف</button>
+          <button class="choice" type="button" data-mode="open">فتح الصنف</button>
+        </div>
+      </section>
+      <section id="entryScreen" class="screen">
+        <button class="back" id="back" type="button">→ رجوع للاختيار</button>
+        <h1 id="entryHeading">إغلاق الصنف</h1>
+        <p class="intro">أدخل رقم الصنف واختر طول الباركود.</p>
+        <form id="form" novalidate>
+          <label for="itemNumber">رقم الصنف</label>
+          <div class="input-row">
+            <input id="itemNumber" name="itemNumber" inputmode="numeric" autocomplete="off" placeholder="مثال: 123456" aria-describedby="hint error">
+            <button class="make" type="submit">إظهار الباركود</button>
+          </div>
+          <label for="barcodeLength" style="margin-top:16px">طول الباركود</label>
+          <div class="input-row">
+            <input id="barcodeLength" type="number" min="180" max="1000" step="10" value="420" aria-label="عرض الباركود بالبكسل">
+          </div>
+          <p class="hint" id="hint">حدد العرض بالبكسل (من 180 إلى 1000). يمكن طباعة البطاقة بعد ظهورها.</p>
+          <p class="error" id="error" role="alert"></p>
+        </form>
+      </section>
+      <section id="result" class="result" aria-live="polite" aria-label="نتيجة الباركود">
+        <h2 class="result-title" id="resultTitle"></h2>
+        <div class="barcode-wrap"><svg id="barcode" class="barcode" role="img"></svg></div>
+        <p class="digits" id="digits"></p>
+        <button class="print" type="button" id="print">طباعة البطاقة</button>
+      </section>
+      <footer>تطوير mousa almaani</footer>
+    </section>
+  </main>
+  <script>
+    // Code 39 supports numeric item codes and can be scanned by common retail readers.
+    const code39={
+      '0':'nnnwwnwnn','1':'wnnwnnnnw','2':'nnwwnnnnw','3':'wnwwnnnnn','4':'nnnwwnnnw','5':'wnnwwnnnn','6':'nnwwwnnnn','7':'nnnwnnwnw','8':'wnnwnnwnn','9':'nnwwnnwnn',
+      '*':'nwnnwnwnn'
+    };
+    let mode='close';
+    const buttons=[...document.querySelectorAll('.choice')], form=document.querySelector('#form'), input=document.querySelector('#itemNumber');
+    const result=document.querySelector('#result'), error=document.querySelector('#error');
+    buttons.forEach(button=>button.addEventListener('click',()=>{
+      mode=button.dataset.mode;
+      document.querySelector('#homeScreen').classList.remove('active');
+      document.querySelector('#entryScreen').classList.add('active');
+      document.querySelector('#entryHeading').textContent=mode==='close'?'إغلاق الصنف':'فتح الصنف';
+      document.querySelector('#entryHeading').style.color=mode==='close'?'#d32638':'#16834d';
+      result.classList.remove('visible'); input.focus();
+    }));
+    document.querySelector('#back').addEventListener('click',()=>{
+      result.classList.remove('visible'); document.querySelector('#entryScreen').classList.remove('active');
+      document.querySelector('#homeScreen').classList.add('active'); error.textContent='';
+    });
+    function drawBarcode(value){
+      const svg=document.querySelector('#barcode'), ns='http://www.w3.org/2000/svg'; svg.replaceChildren();
+      const full='*'+value+'*', narrow=2, wide=5, gap=2; let x=10;
+      for(let c=0;c<full.length;c++){
+        const pattern=code39[full[c]];
+        for(let i=0;i<pattern.length;i++){
+          const width=pattern[i]==='w'?wide:narrow;
+          if(i%2===0){const bar=document.createElementNS(ns,'rect');bar.setAttribute('x',x);bar.setAttribute('y',4);bar.setAttribute('width',width);bar.setAttribute('height',88);bar.setAttribute('fill','#111827');svg.appendChild(bar)}
+          x+=width;
+        }
+        if(c<full.length-1)x+=gap;
+      }
+      x+=10; svg.setAttribute('viewBox',`0 0 ${x} 96`); svg.setAttribute('width',document.querySelector('#barcodeLength').value); svg.setAttribute('height','120'); svg.setAttribute('preserveAspectRatio','none'); svg.setAttribute('aria-label',`باركود رقم ${value}`);
+    }
+    function render(value){
+      document.querySelector('#resultTitle').textContent=mode==='close'?'إغلاق الصنف':'فتح الصنف';
+      result.className=`result visible ${mode}`; document.querySelector('#digits').textContent=value; drawBarcode(value);
+    }
+    form.addEventListener('submit',event=>{
+      event.preventDefault(); const value=input.value.trim();
+      if(!value){error.textContent='الرجاء إدخال رقم الصنف.'; input.focus(); return}
+      if(!/^\d+$/.test(value)){error.textContent='استخدم الأرقام فقط.'; input.focus(); return}
+      const length=Number(document.querySelector('#barcodeLength').value);
+      if(!Number.isInteger(length)||length<180||length>1000){error.textContent='اختر طولاً بين 180 و1000 بكسل.'; return}
+      error.textContent=''; render(value);
+    });
+    input.addEventListener('input',()=>{if(error.textContent)error.textContent=''});
+    document.querySelector('#print').addEventListener('click',()=>window.print());
+  </script>
+</body>
+</html>
